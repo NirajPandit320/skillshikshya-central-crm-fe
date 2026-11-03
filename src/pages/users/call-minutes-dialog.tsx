@@ -161,12 +161,13 @@ export function CallMinutesDialog({
         onOpenChange(o);
       }}
     >
-      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-2xl min-w-0 p-4 sm:p-6 max-h-[85dvh] sm:max-h-[90dvh] overflow-y-auto overflow-x-hidden">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <Coins className="text-brand size-5 shrink-0" /> Call minutes{target ? ` — ${target.name}` : ""}
+      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-2xl min-w-0 p-4 sm:p-6 max-h-[95dvh] sm:max-h-[90dvh] overflow-y-auto overflow-x-hidden">
+        <DialogHeader className="min-w-0">
+          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg min-w-0">
+            <Coins className="text-brand size-5 shrink-0" />
+            <span className="break-words min-w-0">Call minutes{target ? ` — ${target.name}` : ""}</span>
           </DialogTitle>
-          <DialogDescription className="text-xs sm:text-sm">
+          <DialogDescription className="text-xs sm:text-sm break-words">
             {target
               ? `Top up minutes for ${target.email}. Minutes are deducted automatically as counselors log calls.`
               : "Pick a user to view their balance and top it up."}
@@ -174,7 +175,7 @@ export function CallMinutesDialog({
         </DialogHeader>
 
         {needsPick && (
-          <div className="grid gap-2 min-w-0">
+          <div className="grid gap-2 min-w-0 w-full max-w-full">
             <Label required>User</Label>
             <Combobox
               value={pickedUserId}
@@ -188,6 +189,9 @@ export function CallMinutesDialog({
               placeholder="Search users by name or email…"
               searchPlaceholder="Type to search…"
               emptyText="No users match."
+              multiline
+              selectedLabel={target ? [target.name, target.email].filter(Boolean).join(" · ") : undefined}
+              className="w-full min-w-0 max-w-full"
             />
           </div>
         )}
