@@ -1,9 +1,3 @@
-/**
- * Lightweight, dependency-free chart primitives for the CRM dashboard and
- * reports. Pure CSS/SVG, theme-token driven. Intentionally simple — these are
- * static-prototype visualizations, not an analytics engine.
- */
-
 import { cn } from "@/lib/utils";
 
 /* ---------------------------------------------------------------- funnel */
@@ -88,40 +82,74 @@ export function DonutChart({ slices }: { slices: DonutSlice[] }) {
 
 /* ------------------------------------------------------- horizontal bars */
 
-export function HBarList({ data, max }: { data: { label: string; value: number }[]; max?: number }) {
+export interface HBarItem {
+  id?: string | number | null;
+  label: string;
+  value: number;
+}
+
+export function HBarList({ data, max }: { data: HBarItem[]; max?: number }) {
   const top = max ?? Math.max(1, ...data.map((d) => d.value));
   return (
     <div className="space-y-2.5">
-      {data.map((d) => (
-        <div key={d.label} className="grid grid-cols-[1fr_auto] items-center gap-2">
-          <div className="min-w-0">
-            <p className="mb-1 truncate text-xs font-medium">{d.label}</p>
-            <div className="bg-muted h-2 overflow-hidden rounded-full">
-              <div className="bg-brand h-full rounded-full" style={{ width: `${(d.value / top) * 100}%` }} />
+      {data.map((d, idx) => {
+        const itemKey = d.id != null ? `hbar-${d.id}` : `${d.label}-${idx}`;
+        return (
+          <div key={itemKey} className="grid grid-cols-[1fr_auto] items-center gap-2">
+            <div className="min-w-0">
+              <p className="mb-1 truncate text-xs font-medium">{d.label}</p>
+              <div className="bg-muted h-2 overflow-hidden rounded-full">
+                <div className="bg-brand h-full rounded-full" style={{ width: `${(d.value / top) * 100}%` }} />
+              </div>
             </div>
+            <span className="text-muted-foreground w-8 text-right text-sm font-semibold tabular-nums">
+              {d.value}
+            </span>
           </div>
-          <span className="text-muted-foreground w-8 text-right text-sm font-semibold tabular-nums">
-            {d.value}
-          </span>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
 
 /* ----------------------------------------------------- mini vertical bars */
 
-export function MiniBars({ values, className }: { values: number[]; className?: string }) {
+export function MiniBars({
+  values,
+  labels,
+  className,
+}: {
+  values: number[];
+  labels?: string[];
+  className?: string;
+}) {
   const max = Math.max(1, ...values);
   return (
-    <div className={cn("flex h-24 items-end gap-1.5 pt-2", className)}>
-      {values.map((v, i) => (
-        <span
-          key={i}
-          className={cn("flex-1 rounded-t", i % 2 === 0 ? "bg-brand" : "bg-brand-fixed-dim")}
-          style={{ height: `${Math.max(12, (v / max) * 100)}%` }}
-        />
-      ))}
+    <div
+      className={cn("flex h-24 items-end gap-1.5 pt-2", className)}
+      role="region"
+      aria-label="Daily call chart"
+    >
+      {values.map((v, i) => {
+        const dateStr = labels?.[i];
+        const barDescription = dateStr
+          ? `${dateStr}: ${v} ${v === 1 ? "call" : "calls"}`
+          : `${v} ${v === 1 ? "call" : "calls"}`;
+        return (
+          <span
+            key={i}
+            role="img"
+            aria-label={barDescription}
+            title={barDescription}
+            tabIndex={0}
+            className={cn(
+              "flex-1 rounded-t transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+              i % 2 === 0 ? "bg-brand" : "bg-brand-fixed-dim",
+            )}
+            style={{ height: `${Math.max(12, (v / max) * 100)}%` }}
+          />
+        );
+      })}
     </div>
   );
 }
