@@ -120,6 +120,10 @@ export function LeadActionDialogs({ action, lead, onClose }: Props) {
     onClose();
   }
 
+  // ---------------------------------------------------------------------------
+  // Duration Live Validation & Submission (US-5)
+  // ---------------------------------------------------------------------------
+
   const [durationError, setDurationError] = useState<string | null>(null);
 
   const durationParsed = useMemo(() => {

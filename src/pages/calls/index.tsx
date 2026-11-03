@@ -15,7 +15,7 @@ import {
   Search,
   Timer,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -62,6 +62,10 @@ import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { cn } from "@/lib/utils";
 import type { Call, CallListParams, CallSummaryParams } from "@/types/calls";
 
+// ---------------------------------------------------------------------------
+// Constants & Timezone Helpers (Asia/Kathmandu)
+// ---------------------------------------------------------------------------
+
 const PAGE_SIZE = 20;
 
 function getTodayInNepal(): { year: number; month: number; day: number } {
@@ -88,6 +92,10 @@ function toNepalIsoString(
   return `${y}-${m}-${d}T${time}+05:45`;
 }
 
+// ---------------------------------------------------------------------------
+// Subcomponents (KPI Cards & Field Display)
+// ---------------------------------------------------------------------------
+
 interface StatCardProps {
   label: string;
   value: string | number | undefined;
@@ -108,25 +116,29 @@ function StatCard({
   tone,
 }: StatCardProps) {
   return (
-    <Card className="gap-2 py-5">
-      <CardHeader className="flex-row items-center justify-between pb-1">
-        <div className="flex items-center gap-1.5">
-          <CardDescription className="font-mono text-[11px] font-medium tracking-wider uppercase">
+    <Card className="gap-1 py-3.5 sm:gap-2 sm:py-5">
+      <CardHeader className="flex-row items-center justify-between px-3.5 pb-0.5 sm:px-6 sm:pb-1">
+        <div className="flex items-center gap-1 min-w-0">
+          <CardDescription className="font-mono text-[10px] sm:text-[11px] font-medium tracking-wider uppercase truncate">
             {label}
           </CardDescription>
-          {isUpdating && <Loader2 className="size-3 animate-spin text-muted-foreground" />}
+          {isUpdating && <Loader2 className="size-2.5 sm:size-3 animate-spin text-muted-foreground shrink-0" />}
         </div>
-        <Icon className={cn("size-4", tone)} />
+        <Icon className={cn("size-3.5 sm:size-4 shrink-0", tone)} />
       </CardHeader>
-      <CardContent className="space-y-1">
+      <CardContent className="space-y-0.5 px-3.5 sm:space-y-1 sm:px-6">
         {loading ? (
-          <Skeleton className="h-8 w-24" />
+          <Skeleton className="h-7 w-20 sm:h-8 sm:w-24" />
         ) : (
-          <div className={cn("space-y-1 transition-opacity", isUpdating && "opacity-60")}>
-            <p className="font-headline text-2xl font-semibold tabular-nums">
+          <div className={cn("space-y-0.5 sm:space-y-1 transition-opacity", isUpdating && "opacity-60")}>
+            <p className="font-headline text-lg sm:text-2xl font-semibold tabular-nums leading-tight">
               {value ?? 0}
             </p>
-            {subtext && <p className="text-muted-foreground text-xs">{subtext}</p>}
+            {subtext && (
+              <p className="text-muted-foreground text-[10px] leading-tight sm:text-xs truncate sm:whitespace-normal">
+                {subtext}
+              </p>
+            )}
           </div>
         )}
       </CardContent>
@@ -153,6 +165,10 @@ function DetailField({
   );
 }
 
+// ---------------------------------------------------------------------------
+// Main Calls Dashboard Page Component (US-1, US-2, US-3, US-4, US-6)
+// ---------------------------------------------------------------------------
+
 export default function CallsPage() {
   const { user } = useAuth();
   const isStaff = !!(user?.is_staff || user?.is_superuser);
@@ -174,8 +190,8 @@ export default function CallsPage() {
   const [searchInput, setSearchInput] = useState(rawSearch);
   const debouncedSearch = useDebouncedValue(searchInput, 300);
 
-  // Sync debounced search back to URL if changed
-  useMemo(() => {
+  // Sync debounced search back to URL query parameters
+  useEffect(() => {
     if (debouncedSearch !== rawSearch) {
       const next = new URLSearchParams(searchParams);
       if (debouncedSearch) {
@@ -385,7 +401,7 @@ export default function CallsPage() {
       ) : (
         <>
           {/* KPI Cards */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             <StatCard
               label="Total Calls"
               value={summary?.total_calls}
@@ -443,20 +459,20 @@ export default function CallsPage() {
           </div>
 
           {/* Charts */}
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
             <Card>
-              <CardHeader>
+              <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-base">Calls per day</CardTitle>
-                    <CardDescription>Daily call activity in Nepal time</CardDescription>
+                    <CardTitle className="text-sm sm:text-base">Calls per day</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm">Daily call activity in Nepal time</CardDescription>
                   </div>
                   {summaryQ.isFetching && !summaryQ.isLoading && (
                     <Loader2 className="size-3.5 animate-spin text-muted-foreground" />
                   )}
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
                 {summaryQ.isLoading ? (
                   <Skeleton className="h-28 w-full" />
                 ) : summary?.by_day && summary.by_day.length > 0 ? (
@@ -465,10 +481,17 @@ export default function CallsPage() {
                       values={summary.by_day.map((d) => d.calls)}
                       labels={summary.by_day.map((d) => d.date)}
                     />
-                    <div className="text-muted-foreground mt-3 flex justify-between text-xs tabular-nums">
-                      <span>{summary.by_day[0]?.date}</span>
-                      <span>{summary.by_day[summary.by_day.length - 1]?.date}</span>
-                    </div>
+                    {summary.by_day.length > 1 &&
+                    summary.by_day[0]?.date !== summary.by_day[summary.by_day.length - 1]?.date ? (
+                      <div className="text-muted-foreground mt-3 flex justify-between text-xs tabular-nums">
+                        <span>{summary.by_day[0]?.date}</span>
+                        <span>{summary.by_day[summary.by_day.length - 1]?.date}</span>
+                      </div>
+                    ) : (
+                      <div className="text-muted-foreground mt-3 hidden lg:flex justify-center text-xs tabular-nums">
+                        <span>{summary.by_day[0]?.date}</span>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <p className="text-muted-foreground py-8 text-center text-sm">
@@ -479,28 +502,33 @@ export default function CallsPage() {
             </Card>
 
             <Card>
-              <CardHeader>
+              <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-base">Top 10 callers</CardTitle>
-                    <CardDescription>Counselors with highest call count</CardDescription>
+                    <CardTitle className="text-sm sm:text-base">Top 10 callers</CardTitle>
+                    <CardDescription className="text-xs sm:text-sm">Counselors with highest call count</CardDescription>
                   </div>
                   {summaryQ.isFetching && !summaryQ.isLoading && (
                     <Loader2 className="size-3.5 animate-spin text-muted-foreground" />
                   )}
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
                 {summaryQ.isLoading ? (
                   <Skeleton className="h-28 w-full" />
                 ) : summary?.by_user && summary.by_user.length > 0 ? (
                   <div className={cn("transition-opacity", summaryQ.isFetching && !summaryQ.isLoading && "opacity-60")}>
                     <HBarList
-                      data={summary.by_user.map((u, idx) => ({
-                        id: u.user_id != null ? u.user_id : `unknown-${idx}`,
-                        label: u.name,
-                        value: u.calls,
-                      }))}
+                      data={summary.by_user.map((u, idx) => {
+                        const mins = Math.round(u.seconds / 60);
+                        const pct = summary.total_calls > 0 ? Math.round((u.calls / summary.total_calls) * 100) : 0;
+                        return {
+                          id: u.user_id != null ? u.user_id : `unknown-${idx}`,
+                          label: u.name,
+                          value: u.calls,
+                          detail: `${mins}m talk time · ${pct}%`,
+                        };
+                      })}
                     />
                   </div>
                 ) : (
@@ -516,7 +544,7 @@ export default function CallsPage() {
 
       {/* Filter Bar */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-[13rem] max-w-sm flex-1">
+        <div className="relative w-full sm:w-auto sm:min-w-[13rem] sm:max-w-sm sm:flex-1">
           <Search className="text-muted-foreground absolute top-2.5 left-3 size-4" />
           <Input
             placeholder="Search by lead, phone, caller, notes..."
@@ -531,7 +559,7 @@ export default function CallsPage() {
           value={directionParam}
           onValueChange={(val) => handleFilterChange("direction", val)}
         >
-          <SelectTrigger className="w-36">
+          <SelectTrigger className="w-full sm:w-36 flex-1 min-w-[130px]">
             <SelectValue placeholder="All directions" />
           </SelectTrigger>
           <SelectContent>
@@ -546,7 +574,7 @@ export default function CallsPage() {
           value={createdByParam}
           onValueChange={(val) => handleFilterChange("created_by", val)}
         >
-          <SelectTrigger className="w-44">
+          <SelectTrigger className="w-full sm:w-44 flex-1 min-w-[150px]">
             <SelectValue placeholder="Logged by..." />
           </SelectTrigger>
           <SelectContent>
@@ -565,7 +593,7 @@ export default function CallsPage() {
             value={branchParam}
             onValueChange={(val) => handleFilterChange("branch_id", val)}
           >
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-full sm:w-40 flex-1 min-w-[140px]">
               <SelectValue placeholder="All branches" />
             </SelectTrigger>
             <SelectContent>
@@ -594,7 +622,7 @@ export default function CallsPage() {
             updateParams(next);
           }}
         >
-          <SelectTrigger className="w-36">
+          <SelectTrigger className="w-full sm:w-36 flex-1 min-w-[130px]">
             <SelectValue placeholder="Date range" />
           </SelectTrigger>
           <SelectContent>
@@ -608,17 +636,17 @@ export default function CallsPage() {
 
         {/* Custom Date Pickers */}
         {datePresetParam === "custom" && (
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
             <Input
               type="date"
-              className="w-36"
+              className="w-full sm:w-36 flex-1 min-w-[120px]"
               value={dateFromParam}
               onChange={(e) => handleFilterChange("date_from", e.target.value)}
             />
             <span className="text-muted-foreground text-xs">to</span>
             <Input
               type="date"
-              className="w-36"
+              className="w-full sm:w-36 flex-1 min-w-[120px]"
               value={dateToParam}
               onChange={(e) => handleFilterChange("date_to", e.target.value)}
             />
@@ -859,7 +887,9 @@ export default function CallsPage() {
         )}
       </div>
 
-      {/* Call Details Side Panel (US-5) */}
+      {/* ------------------------------------------------------------------- */}
+      {/* Call Details Side Panel (US-3) */}
+      {/* ------------------------------------------------------------------- */}
       <Sheet
         open={selectedCall !== null}
         onOpenChange={(open) => !open && setSelectedCall(null)}

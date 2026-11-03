@@ -3,6 +3,10 @@
  * in apps/callminutes/utils.py.
  */
 
+// ---------------------------------------------------------------------------
+// Flexible Duration Parser (US-5)
+// ---------------------------------------------------------------------------
+
 export function parseDurationToSeconds(
   input: string | null | undefined,
 ): { seconds: number; error: null } | { seconds: null; error: string } {
@@ -86,6 +90,10 @@ export function parseDurationToSeconds(
     error: `Invalid duration format: "${input}". Accepted formats: "4:19", "4.19", "04:19", "4m19s", "259", "4:19:30"`,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Duration Formatters (Live Preview & Displays)
+// ---------------------------------------------------------------------------
 
 export function formatDurationPreview(totalSeconds: number): string {
   if (totalSeconds < 0) return "= 0 sec";
